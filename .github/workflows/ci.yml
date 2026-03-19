@@ -1,0 +1,43 @@
+# pipeline configuratoin file. Github Actions reads it and 
+# automatically executes on every push
+
+name: Seat-End Device CI
+
+# trigger: run this pippeline on every push to any branch
+on: [push]
+
+jobs:
+    # every time your pipeline runs it uses a brand new linux machine
+    # It proves your code works on a new environment
+    test:
+        # uses a fresh virtual machine to run everythin
+        runs-on: ubuntu-latest
+
+        steps:
+            # downloads your repository to the new virtual machine
+            - name: Checkout code
+              uses: actions/checkout@v3
+            
+
+            # install python w/version so it doesn't change unexpectedly
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: '3.11'
+
+            # install dependencies from requirements.txt
+            - name: Install dependencies
+              run: pip install -r requirements.txt
+
+            # run tests & generate html report
+            # if any tests fail the pipeline fails
+            - name: Run tests
+              run: pytest tests/ -v --html=reports/report.html --self-contained-html
+            
+            # save the html report before gihubb destroy virtual machine
+            # downloadable from the Actions tab under "Artifacts"
+            - name: Upload test report
+              uses: actions/upload-artifact@v3
+              with:
+                name: test-report
+                path: reports/report.html
