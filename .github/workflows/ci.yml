@@ -16,12 +16,12 @@ jobs:
         steps:
             # downloads your repository to the new virtual machine
             - name: Checkout code
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
             
 
             # install python w/version so it doesn't change unexpectedly
             - name: Set up Python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                 python-version: '3.11'
 
@@ -37,7 +37,7 @@ jobs:
             # save the html report before gihubb destroy virtual machine
             # downloadable from the Actions tab under "Artifacts"
             - name: Upload test report
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               with:
                 name: test-report
                 path: reports/report.html
