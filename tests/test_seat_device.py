@@ -134,3 +134,72 @@ def test_call_button_when_off_invalid(device_off):
 def test_reset_button_when_off_valid(device_off):
     device_off.reset_call_button()
     assert device_off.get_status()["call_button_active"] == False
+
+# Wifi Tests
+
+def test_connected_wifi(device_on):
+    device_on.connect_wifi()
+
+    assert device_on.get_status()["wifi_connected"] == True
+
+def test_disconnect_wifi(device_on):
+    device_on.connect_wifi()
+    device_on.disconnect_wifi()
+
+    assert device_on.get_status()["wifi_connected"] == False
+
+def test_wifi_when_off_invalid(device_off):
+    with pytest.raises(RuntimeError):
+        device_off.connect_wifi()
+
+def test_disconnect_wifi_when_off_invalid(device_off):
+    with pytest.raises(RuntimeError):
+        device_off.disconnect_wifi()
+
+# language Tests
+
+def test_set_language(device_on):
+    #happy path: device should set language correctly
+    device_on.set_language("es")
+    assert device_on.get_status()["language"] == "es"
+
+
+def test_set_language_invalid(device_on):
+    # handles user entering invalid language
+    with pytest.raises(ValueError):
+        device_on.set_language("invalid_language")
+
+def test_set_language_when_off_invalid(device_off):
+    # cannot set language when seat is off
+    with pytest.raises(RuntimeError):
+        assert device_off.set_language("es")
+
+def test_all_languages_valid(device_on):
+    languages = ["en", "fr", "ma", "es"]
+    for lang in languages:
+        device_on.set_language(lang)
+        assert device_on.get_status()["language"] == lang
+
+def test_reboot_resets_state(device_on):
+    # reboots should affect volume, channel, brightness and wifi to default
+    device_on.set_volume(80)
+    device_on.select_channel("Sports")
+    device_on.connect_wifi()
+    device_on.reboot()
+    status = device_on.get_status()
+    assert status["powered_on"] == True
+    assert status["volume"] == 50
+    assert status["current_channel"] is None
+    assert status["wifi_connected"] == False
+    assert status["brightness"] == 50
+
+def test_reboot_not_change_language(device_on):
+    # reboot should not affect language
+    device_on.set_language("fr")
+    device_on.reboot()
+    assert device_on.get_status()["language"] == "fr"
+
+def test_reboot_device_stays_on(device_on):
+    #  device should not completely power off after reboot but remain on
+    device_on.reboot()
+    assert device_on.get_status()["powered_on"] == True
