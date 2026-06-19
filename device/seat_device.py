@@ -1,6 +1,17 @@
 # I used a class because it has a State (volume, channel, power) and
 # Behavior (turn on, change channel). So grouping them together mirrors
 # how real hardware works
+from typing import TypedDict
+
+class DeviceStatus(TypedDict):
+    seat_id: str
+    powered_on: bool
+    volume: int
+    current_channel: str | None
+    brightness: int
+    call_button_active: bool
+    wifi_connected: bool
+    language: str
 
 class SeatDevice:
     def __init__(self, seat_id: str) -> None:
@@ -8,12 +19,20 @@ class SeatDevice:
         self.seat_id = seat_id
         self.powered_on = False
         self.volume = 0
-        self.current_channel = None
+        self.current_channel:  str | None = None
         self.brightness = 0
         self.call_button_active = False # flight attendant call button
 
         self.wifi_connected = False
         self.language = "en"
+
+    def __enter__(self):
+        return self #no set upt needed
+     
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # only power off if we powered device on for test
+        if self.powered_on:
+            self.power_off()
 
     # when device powers on, we set default values
     def power_on(self):
@@ -33,7 +52,7 @@ class SeatDevice:
     # every method that changes the device's state must validate that the device
     # is on and the input is within acceptable bounds called "failing fast"
 
-    def set_volume(self, level: int):
+    def set_volume(self, level: int) -> None:
         if self.powered_on == False:
             raise RuntimeError("Cannot set volume when device is powered off")
         if level < 0 or level > 100:
@@ -41,7 +60,7 @@ class SeatDevice:
         
         self.volume = level
         
-    def select_channel(self, channel: str):
+    def select_channel(self, channel: str) -> None:
         if not self.powered_on:
             raise RuntimeError("Cannot change channels when power is off")
         if not channel:
@@ -62,12 +81,13 @@ class SeatDevice:
             raise RuntimeError("Cannot press call button when device is powered off")
         
         self.call_button_active = True
+
     # you can reset button when device is powered off
     # flight attendeds come help then reset button  on the arm rest panel independent of screen
     def reset_call_button(self):
         self.call_button_active = False
 
-    def get_status(self) -> dict:
+    def get_status(self) -> DeviceStatus:
         return {
             "seat_id": self.seat_id,
             "powered_on": self.powered_on,

@@ -2,19 +2,32 @@ import pytest
 from device.seat_device import SeatDevice
 
 # fixture is a reusable piece of code, that refreshes everytime it is used
+import time
+import functools
+
+def timer(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        duration = end - start
+        print(f"{func.__name__} took {duration:.4f} seconds")
+        return result
+    return wrapper
+
 @pytest.fixture
 def device_off():
     #creates an new device that is off
-    return SeatDevice("6A")
+    with SeatDevice("6A") as device:
+        yield device
 
 @pytest.fixture
 def device_on():
-    device = SeatDevice("6A")
-    #turn the device on
-    device.power_on()
-    
-    return device
 
+    with SeatDevice("6A") as device:
+        device.power_on()
+        yield device
 
 # power tests
 
@@ -27,7 +40,9 @@ def test_initial_state(device_off):
     assert status["current_channel"] == None
     assert status["brightness"] == 0
     assert status["call_button_active"] == False
+
 # Powers on device
+@timer
 def test_power_on(device_off):
     device_off.power_on()
     status = device_off.get_status()
